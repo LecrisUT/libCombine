@@ -7,10 +7,10 @@
 #include <omex/CaReader.h>
 #include <omex/CaWriter.h>
 
-#include <zipper/zipper.h>
-#include <zipper/tools.h>
-#include <zipper/unzipper.h>
+#include <Zipper/Zipper.hpp>
+#include <Zipper/Unzipper.hpp>
 
+#include <filesystem>
 #include <fstream>
 #include <iterator>
 #include <sstream>
@@ -78,7 +78,7 @@ CombineArchive::initializeFromUnzipper(
 
   // read manifest
   std::ostringstream manifest;
-  mpUnzipper->extractEntryToStream("manifest.xml", manifest);
+  mpUnzipper->extract("manifest.xml", manifest);
   mpManifest = readOMEXFromString(manifest.str().c_str());
 
   if (mpManifest == NULL)
@@ -252,13 +252,13 @@ bool CombineArchive::writeToFile(const std::string &fileName)
     return false;
 
   // if the file already exists remove it
-  if (zipper::checkFileExists(fileName))
+  if (std::filesystem::exists(fileName))
   {
     std::remove(fileName.c_str());
   }
 
   Zipper zipper(fileName);
-  zipper.open();
+  zipper.reopen();
 
   unsigned int numContents = mpManifest->getNumContents();
 
@@ -345,7 +345,7 @@ CombineArchive::getStream(const std::string &name,
     if (mpUnzipper == NULL) return false;
     std::string tempFile = Util::getTempFilename();
     std::ofstream tempStream(tempFile.c_str(), std::ios::out | std::ios::binary);
-    bool result = mpUnzipper->extractEntryToStream(filename, tempStream);
+    bool result = mpUnzipper->extract(filename, tempStream);
     tempStream.close();
     if (!result)
     {
@@ -573,7 +573,7 @@ CombineArchive::extractEntry(const std::string &name,
   std::string target(destination);
   if (target.empty())
     target = "./" + name;
-  if (isDirectory(target))
+  if (std::filesystem::is_directory(target))
     target += "/" + name;
 
   std::ofstream stream(target.c_str(), std::ios::out | std::ios::binary);
@@ -619,7 +619,7 @@ CombineArchive::extractEntryToBuffer(const std::string& name)
     return {};
 
   std::vector<unsigned char> res;
-  mpUnzipper->extractEntryToMemory(filename, res);
+  mpUnzipper->extract(filename, res);
 
   return res;
 }

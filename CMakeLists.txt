@@ -46,7 +46,7 @@ set(PACKAGE_NAME "libCombine")
 project(libCombine VERSION "${LIBCOMBINE_VERSION_MAJOR}.${LIBCOMBINE_VERSION_MINOR}.${LIBCOMBINE_VERSION_PATCH}"
                    LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include (CMakeTestCXXCompiler)
@@ -309,11 +309,7 @@ find_package(LIBSBML REQUIRED)
 
 
 # detect zipper library if sources are not included
-if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/submodules/zipper)
-
-find_package(ZIPPER REQUIRED)
-
-endif()
+find_package(zipper CONFIG)
 
 find_package(ZLIB REQUIRED)
 
@@ -508,23 +504,13 @@ file(GLOB COMBINE_SOURCES
 source_group(combine FILES ${COMBINE_SOURCES} ${COMBINE_HEADERS})
 
 # if we have the zipper sources, include them directly
-if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/submodules/zipper)
-  include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR}/submodules/zipper/zipper)
-  include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR}/submodules/zipper)
-
-  file(GLOB ZIPPER_SOURCES
-    RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${CMAKE_CURRENT_SOURCE_DIR}/submodules/zipper/zipper/*.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/submodules/zipper/zipper/*.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/submodules/zipper/zipper/tps/*.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/submodules/zipper/zipper/tps/*.h
-  )
-
-  set(COMBINE_SOURCES ${COMBINE_SOURCES} ${ZIPPER_SOURCES})
-  
-  source_group(zipper FILES ${ZIPPER_SOURCES})
-  
+if (NOT zipper_FOUND)
+    message(FATAL_ERROR "zipper_FOUND = ${zipper_FOUND}")
+  option(ZIPPER_SHARED_LIB "libCombine: Override" OFF)
+  add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/submodules/zipper)
+  add_library(zipper::zipper ALIAS zipper)
 endif()
+list(APPEND LIBCOMBINE_LIBS zipper::zipper)
 
 # include minizip sources if we have them and libSBML has been compiled 
 # without compression

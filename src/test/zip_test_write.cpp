@@ -1,10 +1,10 @@
 #include "catch.hpp"
 
-#include <zipper/zipper.h>
-#include <zipper/unzipper.h>
-#include <zipper/tools.h>
+#include <Zipper/Zipper.hpp>
+#include <Zipper/Unzipper.hpp>
 
 #include <vector>
+#include <filesystem>
 #include <fstream>
 #include <ostream>
 #include <string>
@@ -19,7 +19,7 @@ SCENARIO("archive write", "[zipper]")
     // just in case the last test fails there
     // will still be one zip file around delete it first
 
-    if (checkFileExists("ziptest.zip"))
+    if (std::filesystem::exists("ziptest.zip"))
       std::remove("ziptest.zip");
 
     zipper::Zipper zipper("ziptest.zip");
@@ -50,12 +50,12 @@ SCENARIO("archive write", "[zipper]")
 
         AND_THEN("extracting the test1.txt entry creates a file named 'test1.txt' with the text 'test file compression'")
         {
-          unzipper.extractEntry("test1.txt");
+          unzipper.extract("test1.txt");
           // due to sections forking or creating different stacks we need to make sure the local instance is closed to
           // prevent mixing the closing when both instances are freed at the end of the scope
           unzipper.close();
 
-          REQUIRE(checkFileExists("test1.txt"));
+          REQUIRE(std::filesystem::exists("test1.txt"));
 
           std::ifstream testfile("test1.txt");
           REQUIRE(testfile.good());
@@ -73,7 +73,7 @@ SCENARIO("archive write", "[zipper]")
 
             std::ifstream test2stream("test2.dat");
 
-            zipper.open();
+            zipper.reopen();
             zipper.add(test2stream, "TestFolder/test2.dat");
             zipper.close();
 
@@ -90,10 +90,10 @@ SCENARIO("archive write", "[zipper]")
 
               AND_THEN("extracting the test2.dat entry creates a folder 'TestFolder' with a file named 'test2.dat' with the text 'other data to compression test'")
               {
-                unzipper.extract();
+                unzipper.extractAll();
                 unzipper.close();
 
-                REQUIRE(checkFileExists("TestFolder/test2.dat"));
+                REQUIRE(std::filesystem::exists("TestFolder/test2.dat"));
 
                 std::ifstream testfile("TestFolder/test2.dat");
                 REQUIRE(testfile.good());
@@ -104,7 +104,7 @@ SCENARIO("archive write", "[zipper]")
 
                 AND_WHEN("adding a folder to the zip, creates one entry for each file inside the folder with the name in zip as 'Folder/...'")
                 {
-                  makedir(currentPath() + "/TestFiles/subfolder");
+                  std::filesystem::create_directory(std::filesystem::current_path() / "/TestFiles/subfolder");
                   std::ofstream test("TestFiles/test1.txt");
                   test << "test file compression";
                   test.flush();
@@ -120,7 +120,7 @@ SCENARIO("archive write", "[zipper]")
                   test2.flush();
                   test2.close();
 
-                  zipper.open();
+                  zipper.reopen();
                   zipper.add("TestFiles");
                   zipper.close();
 
@@ -129,12 +129,12 @@ SCENARIO("archive write", "[zipper]")
 
                   AND_THEN("extracting to a new folder 'NewDestination' craetes the file structure from zip in the new destination folder")
                   {
-                    makedir(currentPath() + "/NewDestination");
+                    std::filesystem::create_directory(std::filesystem::current_path() / "/NewDestination");
 
-                    unzipper.extract(currentPath() + "/NewDestination");
-                    REQUIRE(checkFileExists("NewDestination/TestFiles/test1.txt"));
-                    REQUIRE(checkFileExists("NewDestination/TestFiles/test2.pdf"));
-                    REQUIRE(checkFileExists("NewDestination/TestFiles/subfolder/test-sub.txt"));
+                    unzipper.extract(std::filesystem::current_path() / "/NewDestination");
+                    REQUIRE(std::filesystem::exists("NewDestination/TestFiles/test1.txt"));
+                    REQUIRE(std::filesystem::exists("NewDestination/TestFiles/test2.pdf"));
+                    REQUIRE(std::filesystem::exists("NewDestination/TestFiles/subfolder/test-sub.txt"));
                   }
 
                   unzipper.close();
@@ -142,9 +142,9 @@ SCENARIO("archive write", "[zipper]")
               }
             }
 
-            removeFolder("TestFolder");
-            removeFolder("TestFiles");
-            removeFolder("NewDestination");
+            std::filesystem::remove_all("TestFolder");
+            std::filesystem::remove_all("TestFiles");
+            std::filesystem::remove_all("NewDestination");
             std::remove("test1.txt");
           }
         }

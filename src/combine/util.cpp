@@ -1,9 +1,9 @@
 #include <combine/util.h>
-#include <zipper/tools.h>
 
 #include <cstdio>
 #include <cstdlib>
 
+#include <filesystem>
 #include <fstream>
 #include <sstream>
 
@@ -74,12 +74,12 @@ Util::getExtension(const std::string &fileName)
 bool 
 Util::removeFileOrFolder(const std::string & path)
 {
-  if (zipper::isDirectory(path))
+  if (std::filesystem::is_directory(path))
   {
-    zipper::removeFolder(path);
+    std::filesystem::remove_all(path);
     return true;
   }
-  else if (zipper::checkFileExists(path))
+  else if (std::filesystem::exists(path))
   {
     std::remove(path.c_str());
     return true;

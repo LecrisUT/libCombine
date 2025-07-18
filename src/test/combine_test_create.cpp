@@ -1,14 +1,14 @@
 #include "catch.hpp"
 
-#include <zipper/zipper.h>
-#include <zipper/unzipper.h>
-#include <zipper/tools.h>
+#include <Zipper/Zipper.hpp>
+#include <Zipper/Unzipper.hpp>
 
 #include <combine/combinearchive.h>
 #include <combine/knownformats.h>
 #include <omex/CaOmexManifest.h>
 
 #include <vector>
+#include <filesystem>
 #include <fstream>
 #include <ostream>
 #include <sstream>
@@ -41,7 +41,7 @@ std::string getTestFile(const std::string& fileName)
   str << "/" << fileName;
   std::string fullName = str.str();
 
-  if (!checkFileExists(fullName))
+  if (!std::filesystem::exists(fullName))
   {
     FAIL("The test file '" << fileName << "' could not be found. please specify the 'srcdir' environment variable. The full path tried was: " << fullName);
   }
@@ -122,7 +122,7 @@ SCENARIO("creating a new combine archive", "[combine]")
             AND_WHEN("the archive is saved")
             {
               // ensure that the file is not already present, and if so remove it
-              if (checkFileExists("out.omex"))
+              if (std::filesystem::exists("out.omex"))
                 std::remove("out.omex");
 
               int numContent = archive.getManifest()->getNumContents();
@@ -157,10 +157,10 @@ SCENARIO("creating a new combine archive", "[combine]")
 
               AND_WHEN("the archive is saved again")
               {
-                if (checkFileExists("out2.omex"))
+                if (std::filesystem::exists("out2.omex"))
                   std::remove("out2.omex");
                 REQUIRE(archive.writeToFile("out2.omex"));
-                REQUIRE(checkFileExists("out2.omex"));
+                REQUIRE(std::filesystem::exists("out2.omex"));
                 REQUIRE(second.cleanUp());
                 REQUIRE(archive.writeToFile("out2.omex"));
 
@@ -205,14 +205,14 @@ SCENARIO("reading an archive with zero sized entries", "[combine]")
     REQUIRE(archive.initializeFromArchive(getTestFile("test-data/issue_59.omex")) == true);
 
     // remove file if existing 
-    if (checkFileExists("sim.sedml"))
+    if (std::filesystem::exists("sim.sedml"))
       std::remove("sim.sedml");
     
     THEN("the file is extracted as zero sized file")
     {
       // extract zero sized file
       archive.extractEntry("sim.sedml", ".");
-      REQUIRE (checkFileExists("sim.sedml") == true);
+      REQUIRE (std::filesystem::exists("sim.sedml") == true);
       
       // remove it again
       std::remove("sim.sedml");
